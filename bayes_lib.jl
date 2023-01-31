@@ -74,38 +74,43 @@ end;
 end;
 
 # Bayesian BWQS regression.
-@model function bwqs(x, y)
+@model function bwqs(cx, mx, y)
     # Set variance prior.
     σ₂ ~ Gamma(2.0, 2.0)
 
     # Set intercept prior.
     intercept ~ Normal(0, 100)
     beta ~ Normal(0, 100)
+    ncovariates = size(cx, 2)
+    delta ~ filldist(Normal(0, 100), ncovariates)
 
     # Set the priors on our coefficients.
-    nfeatures = size(x, 2)
+    nfeatures = size(mx, 2)
     w ~ Dirichlet(nfeatures, 1) 
 
     # Calculate all the mu terms.
-    mu = intercept .+ beta * (x * w)
+    mu = intercept .+ beta * (mx * w) .+ cx * delta
     return y ~ MvNormal(mu, sqrt(σ₂))
 end
 
 # Bayesian BWQS advanced regression.
-@model function bwqs_adv(x, y)
+@model function bwqs_adv(cx, mx, y)
+    
     # Set variance prior.
     σ₂ ~ Gamma(2.0, 2.0)
 
     # Set intercept prior.
     intercept ~ Normal(0, 100)
     beta ~ Normal(0, 100)
+    ncovariates = size(cx, 2)
+    delta ~ filldist(Normal(0, 100), ncovariates)
 
     # Set the priors on our coefficients.
-    nfeatures = size(x, 2)
+    nfeatures = size(mx, 2)
     alpha ~ filldist(Gamma(1.0, 1.0), nfeatures)
     w ~ Dirichlet(alpha) 
 
     # Calculate all the mu terms.
-    mu = intercept .+ beta * (x * w)
+    mu = intercept .+ beta * (mx * w) .+ cx * delta
     return y ~ MvNormal(mu, sqrt(σ₂))
 end
