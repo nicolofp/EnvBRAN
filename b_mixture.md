@@ -86,14 +86,15 @@ chain_adv = load_object("C:/Users/nicol/Documents/Github_projects/EnvBRAN/mix_ad
 #vcat(quantile(chain_adv.value[:,3,1][:],[0.025,0.5,0.975])',
 #     quantile(chain.value[:,3,1][:],[0.025,0.5,0.975])')
 print("bwqs: ",round(quantile(chain.value[:,3,1][:],0.5), digits = 4),
-      " (",round(quantile(chain.value[:,3,1][:],0.025),"; ",
-        round(quantile(chain.value[:,3,1][:],0.975),")")
+      " (",round(quantile(chain.value[:,3,1][:],0.025), digits = 4),"; ",
+        round(quantile(chain.value[:,3,1][:],0.975), digits = 4),")\n")
 print("bwqs_adv: ",round(quantile(chain_adv.value[:,3,1][:],0.5), digits = 4),
-      " (",round(quantile(chain_adv.value[:,3,1][:],0.025)),"; ",
-        round(quantile(chain_adv.value[:,3,1][:],0.975)),")")
+      " (",round(quantile(chain_adv.value[:,3,1][:],0.025), digits = 4),"; ",
+        round(quantile(chain_adv.value[:,3,1][:],0.975), digits = 4),")")
 ```
 
-    LoadError: syntax: missing comma or ) in argument list
+    bwqs: -0.0137 (-0.0676; 0.0422)
+    bwqs_adv: 0.0007 (-0.0421; 0.04)
 
 ``` julia
 DataFrame(Metals = metals,
