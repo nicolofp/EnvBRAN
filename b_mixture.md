@@ -70,31 +70,33 @@ model_adv = bwqs_adv(cx, mx, y);
 ```
 
 ``` julia
-# save_object("C:/Users/nicol/Documents/Github_projects/EnvBRAN/mix_chain.jld2", chain)
 # save_object("C:/Users/nicol/Documents/Github_projects/EnvBRAN/mix_adv_chain.jld2", chain_adv)
+# save_object("C:/Users/nicol/Documents/Github_projects/EnvBRAN/mix_sim_chain.jld2", chain)
 ```
 
 ``` julia
-chain = load_object(":/Users/nicol/Documents/Github_projects/EnvBRAN/mix_chain.jld2");
+chain = load_object("C:/Users/nicol/Documents/Github_projects/EnvBRAN/mix_sim_chain.jld2");
+```
+
+``` julia
 chain_adv = load_object("C:/Users/nicol/Documents/Github_projects/EnvBRAN/mix_adv_chain.jld2");
 ```
 
-    ┌ Warning: Opening file with JLD2.MmapIO failed, falling back to IOStream
-    └ @ JLD2 C:\Users\nicol\.julia\packages\JLD2\1YVED\src\JLD2.jl:286
-
-    LoadError: SystemError: opening file ":/Users/nicol/Documents/Github_projects/EnvBRAN/mix_chain.jld2": Invalid argument
-
 ``` julia
-hcat(quantile(chain_adv.value[:,3,1][:],[0.025,0.5,0.975]),
-     quantile(chain.value[:,3,1][:],[0.025,0.5,0.975]))
+#vcat(quantile(chain_adv.value[:,3,1][:],[0.025,0.5,0.975])',
+#     quantile(chain.value[:,3,1][:],[0.025,0.5,0.975])')
+print("bwqs: ",round(quantile(chain.value[:,3,1][:],0.5), digits = 4),
+      " (",round(quantile(chain.value[:,3,1][:],0.025),"; ",
+        round(quantile(chain.value[:,3,1][:],0.975),")")
+print("bwqs_adv: ",round(quantile(chain_adv.value[:,3,1][:],0.5), digits = 4),
+      " (",round(quantile(chain_adv.value[:,3,1][:],0.025)),"; ",
+        round(quantile(chain_adv.value[:,3,1][:],0.975)),")")
 ```
 
-    LoadError: UndefVarError: chain_adv not defined
+    LoadError: syntax: missing comma or ) in argument list
 
 ``` julia
 DataFrame(Metals = metals,
      w = mean(Matrix(chain.value[:,7:15,1]), dims = 1)'[:],
      w_adv = mean(Matrix(chain_adv.value[:,16:24,1]), dims = 1)'[:])  
 ```
-
-    LoadError: UndefVarError: chain not defined
