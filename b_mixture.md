@@ -97,7 +97,21 @@ print("bwqs_adv: ",round(quantile(chain_adv.value[:,3,1][:],0.5), digits = 4),
     bwqs_adv: 0.0007 (-0.0421; 0.04)
 
 ``` julia
-DataFrame(Metals = metals,
+show(DataFrame(Metals = metals,
      w = mean(Matrix(chain.value[:,7:15,1]), dims = 1)'[:],
-     w_adv = mean(Matrix(chain_adv.value[:,16:24,1]), dims = 1)'[:])  
+     w_adv = mean(Matrix(chain_adv.value[:,16:24,1]), dims = 1)'[:]))  
 ```
+
+    9×3 DataFrame
+     Row │ Metals        w          w_adv      
+         │ String        Float64    Float64    
+    ─────┼─────────────────────────────────────
+       1 │ hs_as_m_Log2  0.0994072  0.00266723
+       2 │ hs_cd_m_Log2  0.118124   0.0
+       3 │ hs_co_m_Log2  0.103951   0.0559402
+       4 │ hs_cs_m_Log2  0.137375   0.0156049
+       5 │ hs_cu_m_Log2  0.109595   0.0837208
+       6 │ hs_hg_m_Log2  0.0991375  0.0950911
+       7 │ hs_mn_m_Log2  0.102253   0.0533021
+       8 │ hs_mo_m_Log2  0.0995249  0.375829
+       9 │ hs_pb_m_Log2  0.130633   0.317845
