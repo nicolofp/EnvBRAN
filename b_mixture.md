@@ -6,8 +6,8 @@ Import clean dataset and analyze the mixture of the chemicals. Let’s
 upload the packages that we’ll use in the code
 
 ``` julia
-using DataFrames, Statistics, Turing, LinearAlgebra, Plots, CategoricalArrays 
-using JLD2, Distributions, Parquet, StatsPlots, StatsBase, Optim, Zygote, ReverseDiff, Memoization
+using DataFrames, Statistics, LinearAlgebra, Plots, CategoricalArrays 
+using JLD2, Distributions, Parquet, StatsPlots, StatsBase
 ```
 
 Load the bayesian models in the external files. We are using `Turing.jl`
@@ -26,7 +26,7 @@ DT = load_object("C:/Users/nicol/Documents/Github_projects/EnvBRAN/clead_dt.jld2
 ```
 
 Let’s select metals and covariates for the analysis: the metals selected
-are **As**,c **Cd**, **Co**, **Cs**, **Cu**, **Hg**, **Mn**, **Mo**,
+are **As**, **Cd**, **Co**, **Cs**, **Cu**, **Hg**, **Mn**, **Mo**,
 **Pb**. The covariates are **Maternal BMI pre-pregnancy**,**Weight
 gained during pregnancy**,**Maternal age**. The outcome is the birth
 weight z-score.
@@ -48,13 +48,6 @@ for i in 1:size(metals)[1]
     mx[:,i] = ecdf(mx[:,i])(mx[:,i])*10
 end
 ```
-
-``` julia
-Turing.setadbackend(:reversediff)
-Turing.setrdcache(true)
-```
-
-    true
 
 ``` julia
 model = bwqs(cx, mx, y);

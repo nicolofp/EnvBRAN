@@ -1,4 +1,6 @@
-using Turing, Distributions
+using Turing, Distributions, Optim, Zygote, ReverseDiff, Memoization, AdvancedVI
+Turing.setadbackend(:reversediff)
+Turing.setrdcache(true)
 
 # Unsupervised pPCA (ARD correction)
 @model function pPCA_ARD(x,k, ::Type{TV}=Array{Float64}) where {TV}
@@ -79,10 +81,10 @@ end;
     σ₂ ~ Gamma(2.0, 2.0)
 
     # Set intercept prior.
-    intercept ~ Normal(0, 100)
-    beta ~ Normal(0, 100)
+    intercept ~ Normal(0, 20)
+    beta ~ Normal(0, 20)
     ncovariates = size(cx, 2)
-    delta ~ filldist(Normal(0, 100), ncovariates)
+    delta ~ filldist(Normal(0, 20), ncovariates)
 
     # Set the priors on our coefficients.
     nfeatures = size(mx, 2)
@@ -100,14 +102,14 @@ end
     σ₂ ~ Gamma(2.0, 2.0)
 
     # Set intercept prior.
-    intercept ~ Normal(0, 100)
-    beta ~ Normal(0, 100)
+    intercept ~ Normal(0, 20)
+    beta ~ Normal(0, 20)
     ncovariates = size(cx, 2)
-    delta ~ filldist(Normal(0, 100), ncovariates)
+    delta ~ filldist(Normal(0, 20), ncovariates)
 
     # Set the priors on our coefficients.
     nfeatures = size(mx, 2)
-    alpha ~ filldist(Gamma(2.0, 2.0), nfeatures)
+    alpha ~ filldist(Gamma(1.0, 1.0), nfeatures)
     w ~ Dirichlet(alpha) 
 
     # Calculate all the mu terms.
