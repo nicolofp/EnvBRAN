@@ -107,7 +107,7 @@ end
 
     # Set the priors on our coefficients.
     nfeatures = size(mx, 2)
-    alpha ~ filldist(Gamma(1.0, 1.0), nfeatures)
+    alpha ~ filldist(Gamma(2.0, 2.0), nfeatures)
     w ~ Dirichlet(alpha) 
 
     # Calculate all the mu terms.

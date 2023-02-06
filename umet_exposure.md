@@ -1,4 +1,4 @@
-Bayesian mixture
+High dimensional elastic-net regression
 ================
 Nicoló Foppa Pedretti
 
