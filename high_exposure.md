@@ -107,9 +107,5 @@ ewas_results.p_value_bonf = (ewas_results.p_value .< 0.05/size(RExp)[1]);
 ```
 
 ``` julia
-ewas_results
-```
-
-``` julia
-filter([:p_value_bonf] => (x) -> x == 1,ewas_results)
+show(ewas_results)
 ```
