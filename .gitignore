@@ -17,3 +17,5 @@ test_gmm.html
 test_gmm.ipynb
 ppca_turing.ipynb
 variational_inference.ipynb
+clean_dt.arrow
+duckdb_test.ipynb
