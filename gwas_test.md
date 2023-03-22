@@ -4,15 +4,53 @@ Nicoló Foppa Pedretti
 
 ``` julia
 using DataFrames, Statistics, LinearAlgebra, Plots, Clustering, TSne, DecisionTree, MLDataUtils
-using Distributions, StatsPlots, StatsBase, FillArrays, Arrow, UMAP, Distances, MLBase
+using Distributions, StatsPlots, StatsBase, FillArrays, Arrow, UMAP, Distances, MLBase, GigaSOM
 ```
+
+Self-organizing maps (SOM) are a type of artificial neural network that
+use unsupervised learning to create a low-dimensional representation of
+high-dimensional data. The algorithm involves iteratively adjusting the
+weights of neurons in the network to create a topological map of the
+input data. The formula for SOM can be expressed as follows:
+
+Let there be a set of input vectors X = {x1, x2, …, xn} where each
+vector x has m features x = (x1, x2, …, xm). The goal of SOM is to
+create a map of k neurons arranged in a grid with topological structure.
+Each neuron j in the map has a weight vector wj = (w1j, w2j, …, wmj)
+with the same dimension as the input vectors.
+
+The algorithm works as follows:
+
+1.  Initialize the weights of the neurons randomly.
+
+2.  For each input vector xi, find the neuron j with the closest weight
+    vector to xi. This is known as the Best Matching Unit (BMU) and can
+    be calculated as follows:
+    $$ BMU = argmin_{j} \Vert{x_i - w_j}\Vert $$ where \|\|.\|\| denotes
+    the Euclidean distance.
+
+3.  Update the weights of the BMU and its neighbors in the map to move
+    them closer to xi. This is done using the following formula:
+    $$ w_{j}(t+1) = w_{j}(t) + \alpha(t)h_{j,i}(t)(x_i - w_{j}(t)) $$
+    where t is the iteration number, α(t) is the learning rate which
+    decreases over time, and h\_{j,i}(t) is the neighborhood function
+    which determines the extent to which neighboring neurons are
+    updated. It is defined as:
+    $$ h_{j,i}(t) = exp\Bigg(-\frac{\Vert{r_i - r_j}\Vert^2}{2\sigma^2(t)}\Bigg) $$
+    where r_i and r_j are the positions of neurons i and j in the grid,
+    and σ(t) is the neighborhood size which also decreases over time.
+
+4.  Repeat steps 2 and 3 for a fixed number of iterations or until
+    convergence. The resulting SOM can be used to visualize the
+    high-dimensional data in a low-dimensional space and identify
+    clusters or patterns in the data.
 
 ``` julia
 df = DataFrame(Arrow.Table("C:/Users/nicol/Documents/Datasets/GSE71678/Data/processed_data/GSE71678_cov_original.arrow"));
 ```
 
 ``` julia
-cpgs = DataFrame(Arrow.Table("C:/Users/nicol/Documents/Datasets/GSE71678/Data/processed_data/GSE71678_cpgs_original.arrow"))
+cpgs = DataFrame(Arrow.Table("C:/Users/nicol/Documents/Datasets/GSE71678/Data/processed_data/GSE71678_cpgs_original.arrow"));
 ```
 
 ``` julia
@@ -64,22 +102,31 @@ println("ch.9 - ",sum(contains.(cpgs.ID_REF,"ch.9")))
     ch.9 - 88
 
 ``` julia
-R = pairwise(Euclidean(), x[contains.(cpgs.ID_REF,"ch.9"),:], dims=1);
+# R = pairwise(Euclidean(), x[contains.(cpgs.ID_REF,"ch.9"),:], dims=1);
+# hc = hclust(R, linkage=:average)
+# plot(hc)
+# countmap(cutree(hc; k = 4))
 ```
 
 ``` julia
-hc = hclust(R, linkage=:average)
-plot(hc)
+txc1 = Matrix{Float64}(x[contains.(cpgs.ID_REF,"ch.2"),:]);
 ```
-
-![](gwas_test_files/figure-commonmark/cell-11-output-1.svg)
 
 ``` julia
-countmap(cutree(hc; k = 4))
+som = initGigaSOM(txc1, 20, 20)
+som = trainGigaSOM(som, txc1)
 ```
 
-    Dict{Int64, Int64} with 4 entries:
-      4 => 1
-      2 => 2
-      3 => 2
-      1 => 83
+    Som([0.019482827133333335 0.018569973799999997 … 0.013485004399999998 0.031320994666666664; 0.02588981066666667 0.028449281 … 0.026306426999999997 0.04085090333333333; … ; 0.504460595 0.356209895 … 0.413164381 0.484063041; 0.6750458443333333 0.5910151936666667 … 0.672976798 0.656845044], 20, 20, 400, [0.0 0.0; 1.0 0.0; … ; 18.0 19.0; 19.0 19.0])
+
+``` julia
+mapToGigaSOM(som, txc1);
+```
+
+``` julia
+e = embedGigaSOM(som, txc1);
+```
+
+``` julia
+#scatter(e[:,1],e[:,2], label = "", title = "SOM plot")
+```
