@@ -1,4 +1,4 @@
-GWAS - mRNA
+GWAS - cpgs
 ================
 Nicoló Foppa Pedretti
 
@@ -14,108 +14,167 @@ rescale(A; dims=1) = (A .- mean(A, dims=dims)) ./ max.(std(A, dims=dims), eps())
     rescale (generic function with 1 method)
 
 ``` julia
-df = DataFrame(Arrow.Table("C:/Users/nicol/Documents/Datasets/GSE216998/GSE216275/GSE216275_cov_original.arrow"));
+df = DataFrame(Arrow.Table("C:/Users/nicol/Documents/Datasets/GSE71678/Data/processed_data/GSE71678_cov_original.arrow"));
 ```
 
 ``` julia
-df = filter([:replicate, :pregnancy_status_2] => (x,y) -> ismissing(x) & ismissing(y),df)
-df = df[:,[1,2,3,4]];
+df = df[completecases(df[:,["gestational age","infant gender","birth weight (grams)"]]),:];
 ```
 
 ``` julia
-countmap(df.pregnancy_status_1)
-```
-
-    Dict{Union{Missing, String}, Int64} with 3 entries:
-      "Gestational diabetes mellitus" => 37
-      "Other pregnancy complications" => 40
-      "Normal"                        => 286
-
-``` julia
-mrna = DataFrame(Arrow.Table("C:/Users/nicol/Documents/Datasets/GSE216998/GSE216275/GSE216275_mRNA_original.arrow"));
+df.gestage_cat = ceil.(df[:,"gestational age"]);
 ```
 
 ``` julia
-mrna = mrna[:,df.ID1];
+df[df.gestage_cat .< 37,:gestage_cat] = 36*ones(11)
+df[df.gestage_cat .> 41,:gestage_cat] = 42*ones(40);
 ```
 
 ``` julia
-x = Matrix{Float64}(mrna);
+countmap(df[:,"infant gender"])
+histogram(df[:,"gestational age"])
+countmap(df[:,"gestage_cat"])
+```
+
+    Dict{Float64, Int64} with 7 entries:
+      39.0 => 52
+      41.0 => 75
+      36.0 => 11
+      38.0 => 26
+      42.0 => 40
+      37.0 => 9
+      40.0 => 126
+
+``` julia
+zscore_table = combine(groupby(df,["gestage_cat","infant gender"]), ["birth weight (grams)"] .=> (mean,std));
+```
+
+``` julia
+df = innerjoin(df, zscore_table, 
+               on = ["gestage_cat","infant gender"]);
+```
+
+``` julia
+df.bw_zscore = (df[:,"birth weight (grams)"] .- df[:,"birth weight (grams)_mean"])./df[:,"birth weight (grams)_std"];
+```
+
+``` julia
+cpgs = DataFrame(Arrow.Table("C:/Users/nicol/Documents/Datasets/GSE71678/Data/processed_data/GSE71678_cpgs_original.arrow"));
+```
+
+``` julia
+cpgs = cpgs[:,df.ID];
+```
+
+``` julia
+x = Matrix{Float64}(cpgs);
 tx = Matrix(x');
 ```
 
 ``` julia
-mrna_stats = Matrix{Float64}(hcat(mean(x,dims = 2),
+cpgs_stats = Matrix{Float64}(hcat(mean(x,dims = 2),
         std(x,dims = 2),
-        [minimum(x[i,:]) for i in 1:2170],
-        [maximum(x[i,:]) for i in 1:2170],
-        [length(countmap(x[i,:])) for i in 1:2170],
-        [length(countmap(x[i,:])) for i in 1:2170]/363));
+        [minimum(x[i,:]) for i in 1:size(x,1)],
+        [maximum(x[i,:]) for i in 1:size(x,1)],
+        [length(countmap(x[i,:])) for i in 1:size(x,1)],
+        [length(countmap(x[i,:])) for i in 1:size(x,1)]/size(x,2)));
 ```
 
 ``` julia
-sum(mrna_stats[:,6] .> 0.5)
-```
-
-    236
-
-``` julia
-x = x[mrna_stats[:,6] .> 0.5,:];
+df = df[completecases(df[:,["bw_zscore","mom_education","parity","ever_smoker","gestational_diabetes","maternal age",
+                "placenta_al","placenta_cr","placenta_ni","placenta_se","placenta_co","placenta_pb"]]),:];
 ```
 
 ``` julia
-y = convert(Array,  map(element -> element == "Normal" ? 1 : 2, df[:,:pregnancy_status_1]));
+countmap(df[:,"gestational_diabetes"])
+df.gest_diabetis = df[:,"gestational_diabetes"] .== "Yes";
 ```
 
 ``` julia
-# randomize the cancer data rows so when we split the data, we don't only pull one cancer classification
-# also we need to transpose the x data, 
-# because it needs to align properly with the output dimensions
-# Xs, Ys = shuffleobs((x', y))
-# split the data now
-(X_train1, y_train1), (X_test1, y_test1) = splitobs((x, y); at = 0.67)
+countmap(df[:,"ever_smoker"])
+df.smoking = df[:,"ever_smoker"] .== "Yes";
+```
+
+``` julia
+countmap(df[:,"parity"])
+df.parity_bin = df[:,"parity"] .> 0;
+```
+
+``` julia
+countmap(df[:,"maternal race"])
+```
+
+    Dict{Union{Missing, String}, Int64} with 2 entries:
+      "Other/Unknown" => 9
+      "White"         => 302
+
+``` julia
+countmap(df[:,"mom_education"])
+df.low_education = [df[i,"mom_education"] ∈ ["<11th grade","HS grad","Jr College/technical school"] for i in 1:size(df,1)];
+```
+
+``` julia
+dft = df[:,["bw_zscore","low_education","parity_bin","smoking","gest_diabetis","maternal age",
+            "placenta_al","placenta_cr","placenta_ni","placenta_se","placenta_co","placenta_pb"]];
+```
+
+``` julia
+y = Array{Float64}(dft[:,"bw_zscore"])
+z = hcat(ones(size(dft,1)),Matrix{Float64}(dft[:,2:size(dft,2)]));
+```
+
+``` julia
+tmp = vcat("Intercept",names(dft)[2:size(dft,2)])
+results = Array{Float64}(undef,size(dft,2), 6);
+results = hcat(tmp,results);
+```
+
+``` julia
+β = z\y
+σ² = sum((y - z*β).^2)/(size(z,1)-size(z,2))
+Σ = σ²*inv(z'*z)
+std_coeff = sqrt.(diag(Σ))
+
+results[:,2] = β
+results[:,3] = std_coeff
+results[:,4] = β./std_coeff
+results[:,5] = [cdf(TDist(size(z,1)-size(z,2)), -abs(β[i]./std_coeff[i])) for i in 1:size(z,2)]
+results[:,6] = β .- quantile(TDist(size(z,1)-size(z,2)), 0.975) .* std_coeff
+results[:,7] = β .+ quantile(TDist(size(z,1)-size(z,2)), 0.975) .* std_coeff;
+```
+
+``` julia
+results = DataFrame(results,:auto)
+rename!(results, ["variable","beta","std_error","t_value","p_value","CI0025","CI0975"])
+```
+
+``` julia
+ssres = sum((y - z*β).^2)
+sstot = sum((y .- mean(y)).^2)
+R² = 1 .- (ssres/sstot)
+```
+
+    0.1505206725697913
+
+``` julia
+#Fast linear regression code (can be parallelized to make it even faster)
+@time for i in 1:N
+    X_tmp = Array{Float64, 2}(hcat(ones(size(DT)[1]),
+        DT[:,ewas_results[i,2]],
+        Matrix{Float64}(DT[:,[:ethn_PC1, :ethn_PC2, :NK_6, :Bcell_6, 
+                    :CD4T_6, :CD8T_6, :Gran_6, :Mono_6]])))
+    Y_tmp = convert.(Float64, DT[:,ewas_results[i,1]])
+
+    β = X_tmp\Y_tmp
+    σ² = sum((Y_tmp - X_tmp*β).^2)/(size(X_tmp,1)-size(X_tmp,2))
+    Σ = σ²*inv(X_tmp'*X_tmp)
+    std_coeff = sqrt.(diag(Σ))
     
-# transpose the x data back to its original dimensionality
-    x_train = Array(transpose(X_train1))
-    y_train = Array(y_train1)
-    x_test = Array(transpose(X_test1))
-    y_test = Array(y_test1);
+    ewas_results[i,3] = β[2]
+    ewas_results[i,4] = std_coeff[2]
+    ewas_results[i,5] = β[2]/std_coeff[2]
+    ewas_results[i,6] = cdf(TDist(size(X_tmp,1)-size(X_tmp,2)), -abs(β[2]/std_coeff[2]))
+    ewas_results[i,7] = β[2] - quantile(TDist(size(X_tmp,1)-size(X_tmp,2)), 0.975)*std_coeff[2]
+    ewas_results[i,8] = β[2] + quantile(TDist(size(X_tmp,1)-size(X_tmp,2)), 0.975)*std_coeff[2]
+end
 ```
-
-``` julia
-model_rf = RandomForestClassifier(n_subfeatures = 100, 
-                                  n_trees = 1000, 
-                                  min_samples_leaf = 5,
-                                  partial_sampling = 0.90)
-
-DecisionTree.fit!(model_rf,x_train,y_train)
-```
-
-    RandomForestClassifier
-    n_trees:             1000
-    n_subfeatures:       100
-    partial_sampling:    0.9
-    max_depth:           -1
-    min_samples_leaf:    5
-    min_samples_split:   2
-    min_purity_increase: 0.0
-    classes:             [1, 2]
-    ensemble:            Ensemble of Decision Trees
-    Trees:      1000
-    Avg Leaves: 12.491
-    Avg Depth:  6.435
-
-``` julia
-rf_prediction = convert(Array,DecisionTree.predict(model_rf,x_test))
-errorrate(rf_prediction,y_test)
-```
-
-    0.2833333333333333
-
-``` julia
-confusmat(2, y_test, rf_prediction)
-```
-
-    2×2 Matrix{Int64}:
-     86  0
-     34  0
