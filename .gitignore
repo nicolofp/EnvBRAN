@@ -21,3 +21,4 @@ clean_dt.arrow
 duckdb_test.ipynb
 vs_bayesian.ipynb
 gwas_test.ipynb
+bw_placenta_metals.ipynb
